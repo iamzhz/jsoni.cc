@@ -1,11 +1,12 @@
 # jsoni – a pocket-sized JSON library
 
 ## What it is
-Single-file JSON parser that turns text into a tiny tree you can walk with `[]` and `.get()`.   
+A pocket-sized JSON parser that turns text into a tiny tree you can walk with `[]` and `.get()`.   
 (Another wheel)
 
 ## Quick start
 ```cpp
+// 1. include
 #include "jsoni.h"
 
 int main() {
@@ -30,14 +31,16 @@ int main() {
     std::cout << (*root)["hobbies"]["code"].contains("Java") << std::endl; // 0
     std::cout << (*root)["hobbies"]["code"].size() << std::endl; // 3
 
-    // 6. clean-up
+    // 4. clean-up
     root->free();
     delete root;
 }
 ```
 
 ## Build
-*TIP:* `C++11` is enough.  
+> [!TIP]
+> `C++11` is enough.
+ 
 ```bash
 g++ your_code.cc jsoni.cc -std=c++11 -o program
 ```
