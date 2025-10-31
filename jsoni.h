@@ -50,6 +50,7 @@ class TreeNode {
 };
 
 TreeNode * parse(const char * source, Token * first_tok = nullptr);
+TreeNode * parse_from_file(const char * filename);
 
 }
 

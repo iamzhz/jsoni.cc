@@ -5,16 +5,15 @@
 #include <cstring>
 #include <utility>
 #include <unordered_map>
+#include <cstdio>
+#include <cstring>
 
 namespace jsoni {
 
-int line = 0;
-int column = 0;
 int idx = 0;
 // Utils
-void Error(std::string info) {
-    std::cerr << "[Error] " << line << ", " << column << "  " << info << std::endl;
-    std::exit(1);
+void inline Error(const char * info) {
+    throw info;
 }
 
 #define IS_LETTER_OR_NUMBER(var) ( \
@@ -41,12 +40,6 @@ Token get_token(const char * source) {
     char two_chars_string[2] = {0, 0};
     // skip space
     while (source[idx] == ' ' || source[idx] == '\n' || source[idx] == '\t') {
-        if (source[idx] == '\n') {
-            ++ line;
-            column = 0;
-        } else {
-            ++ column;
-        }
         ++ idx;
     }
     // end
@@ -68,7 +61,6 @@ Token get_token(const char * source) {
           two_chars_string[0] = source[idx];
           result.content = two_chars_string;
           ++ idx;
-          ++ column;
           return result;
     }
     // string
@@ -77,7 +69,6 @@ Token get_token(const char * source) {
         char ch;
         result.type = TokenTypeString;
         ++ idx;
-        ++ column;
         while (source[idx] != quote) {
             if (source[idx] == '\0' || source[idx] == '\n') Error("String token is not enough.");
             if (source[idx] == '\\') {
@@ -95,10 +86,8 @@ Token get_token(const char * source) {
             }
             result.content += ch;
             ++ idx;
-            ++ column;
         }
         ++ idx;
-        ++ column;
         return result;
     }
     // int and float
@@ -107,17 +96,14 @@ Token get_token(const char * source) {
         do {
             result.content += source[idx];
             ++ idx;
-            ++ column;
         } while (source[idx] >= '0' && source[idx] <= '9');
         if (source[idx] != '.') return result;
         result.type = TokenTypeFloat;
         result.content += '.';
         ++ idx;
-        ++ column;
         while (source[idx] >= '0' && source[idx] <= '9') {
             result.content += source[idx];
             ++ idx;
-            ++ column;
         }
         return result;
     }
@@ -131,7 +117,6 @@ Token get_token(const char * source) {
             result.type = TokenTypeBool;
             result.content = "true";
             idx += 4;
-            column += 4;
             return result;
     }
     if (source[idx] == 'f') 
@@ -143,7 +128,6 @@ Token get_token(const char * source) {
             result.type = TokenTypeBool;
             result.content = "false";
             idx += 5;
-            column += 5;
             return result;
     }
     Error("Something wrong!");
@@ -304,7 +288,7 @@ TreeNode * parse(const char * source, Token * first_tok) {
     else tok = *first_tok;
 
     if (tok.type == TokenTypeEnd) {
-        return new TreeNode();
+        Error("No data.");
     }
     if (tok.content == "{") {
         return parse_dict(source);
@@ -318,7 +302,27 @@ TreeNode * parse(const char * source, Token * first_tok) {
         tok.type == TokenTypeBool) {
         return new TreeNode(&tok);
     }
-    return nullptr;
+    Error("Something wrong");
+    return nullptr; // never run here
+}
+
+TreeNode * parse_from_file(const char * filename) {
+    // C grammar here
+    int file_size;
+    char * json_data;
+    TreeNode * result;
+    std::FILE * fp = fopen(filename, "r");
+    if (fp == NULL) Error("Cannot open file");
+    std::fseek(fp, 0, SEEK_END);
+    file_size = ftell(fp);
+    std::fseek(fp, 0, SEEK_SET);
+    json_data = (char*)std::malloc(file_size+1);
+    fread(json_data, sizeof(char), file_size, fp);
+    json_data[file_size] = '\0';
+    result = parse(json_data);
+    std::free(json_data);
+    std::fclose(fp);
+    return result;
 }
 
 } // for namespace
